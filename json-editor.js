@@ -33,18 +33,19 @@ class JSON_Editor extends HTMLElement {
                *[part=true]          { color: #c2e69f }
                *[part=false]         { color: #e69fc2 }
             </style>
-            <div id="editor" contentEditable="true" tabIndex="0"></div>
+            <div id="editor" spellcheck="false" tabIndex="0"></div>
         `
-
         this.last_string_content = ''
         this.attachShadow({ mode: 'open' })
         this.shadowRoot.appendChild( template.content.cloneNode(true) )
         this.editor = this.shadowRoot.getElementById('editor')
-        this.addEventListener('keyup', _ => this.format() )
+		this.addEventListener('keydown', e => this.handle_keydown(e) )
+        this.addEventListener('keyup', e => this.handle_keyup(e) )
     }
 
     connectedCallback() {
         this.editor.innerHTML = this.getAttribute('value')
+		this.editor.contentEditable = String(!Boolean(this.getAttribute('readonly'))) || 'true'
         this.indent = Number(this.getAttribute('indent')) || 3
         this.format()
     }
@@ -123,6 +124,41 @@ class JSON_Editor extends HTMLElement {
         return list
     }
 
+    //===[ Input Handling ]====================================================
+   
+	// handle key-down event
+	handle_keydown(e) {
+		//handle TAB press
+		if (e.key == 'Tab' || e.keyCode === 9) {
+			const editor = this.editor
+			e.preventDefault();
+			const selection = this.get_selection();
+			if (selection.rangeCount > 0) {				
+				const range = selection.getRangeAt(0)
+				
+				var tabNode = document.createTextNode("\u00a0".repeat(this.indent));
+				range.insertNode(tabNode);
+		
+				range.setStartAfter(tabNode);
+				range.setEndAfter(tabNode); 
+				selection.removeAllRanges();
+				selection.addRange(range);				
+			}
+		}
+	}
+
+	// handle key-up event
+	handle_keyup(e) {
+		//fire change event
+		var event = new Event('input', {
+			bubbles: true,
+			cancelable: true,
+		});		  
+		this.dispatchEvent(event);
+		//format
+		this.format();
+	}
+	
     //===[ Formatting ]====================================================
    
     // format a json object
@@ -133,7 +169,7 @@ class JSON_Editor extends HTMLElement {
         let output = ''
         output += `<span part="braces">{</span><br>\n`
         output += Object.keys(input).map((key, index, list) => {
-            return `${'&nbsp;'.repeat(offset+this.indent)}<span part="key" part="key"><span part="key_quotes">\"</span>${key}<span part="key_quotes">\"</span></span><span part="colon">:</span><span part="value">${this.format_input(input[key], offset+this.indent)}</span>${index < list.length-1 ? '<span part="comma">,</span>' : ''}<br>\n`
+            return `${'&nbsp;'.repeat(offset+this.indent)}<span part="key" part="key"><span part="key_quotes">\"</span>${key}<span part="key_quotes">\"</span></span><span part="colon"> : </span><span part="value">${this.format_input(input[key], offset+this.indent)}</span>${index < list.length-1 ? '<span part="comma">,</span>' : ''}<br>\n`
         }).join('')
         output += '&nbsp;'.repeat(offset)
         output += `<span part="braces">}</span>`
@@ -191,7 +227,7 @@ class JSON_Editor extends HTMLElement {
         const pointer = this.get_caret_pointer()
         let content = ''
         try {
-            // remove %A0 (NBSP) characters, which are no valid in JSON
+            // remove %A0 (NBSP) characters, which are not valid in JSON
             content = editor.innerText && JSON.parse(editor.innerText.split('\xa0').join(''))
         }
         catch(exception) {
@@ -221,7 +257,7 @@ class JSON_Editor extends HTMLElement {
     }
 
     get value() {
-        return this.string_value
+        return this.editor.innerText
     }
 
     set value( input ) {
@@ -234,6 +270,14 @@ class JSON_Editor extends HTMLElement {
 
     set json_value( input ) {
         this.string_value = JSON.stringify( input )
+    }
+	
+    get readonly() {
+        return this._isEditable;
+    }
+
+    set readonly( input ) {
+		this.editor.contentEditable = !Boolean(input);
     }
 }
 
