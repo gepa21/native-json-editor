@@ -12,6 +12,7 @@ class JSON_Editor extends HTMLElement {
                     color: #fff;
                     font-family: monospace;
                     padding: 4px;
+					white-space: nowrap;
                 }
 
                 div {
@@ -25,9 +26,9 @@ class JSON_Editor extends HTMLElement {
                *[part=brackets]      { color: #d26a6a }
                *[part=colon]         { color: #ffffff }
                *[part=comma]         { color: #ffff25 }
-               *[part=string]        { color: #78dce8 }
+               *[part=string]        { color: #78dce8; white-space:pre; }
                *[part=string_quotes] { color: #E393FF }
-               *[part=key]           { color: #ff6188 }
+               *[part=key]           { color: #FFE682; white-space:pre; }
                *[part=key_quotes]    { color: #fc9867 }
                *[part=null]          { color: #cccccc }
                *[part=true]          { color: #c2e69f }
@@ -44,10 +45,9 @@ class JSON_Editor extends HTMLElement {
     }
 
     connectedCallback() {
-        this.editor.innerHTML = this.getAttribute('value')
 		this.editor.contentEditable = String(!Boolean(this.getAttribute('readonly'))) || 'true'
         this.indent = Number(this.getAttribute('indent')) || 3
-        this.format()
+        this.init(this.getAttribute('value'))
     }
 
     //===[ Caret Control ]=================================================
@@ -243,6 +243,24 @@ class JSON_Editor extends HTMLElement {
         this.last_string_content = current_string_content
         if(pointer && focus)
             this.set_caret_from_pointer(pointer)
+    }
+
+	init(value) {
+        const editor = this.editor
+        let content = ''
+        try {
+            // remove %A0 (NBSP) characters, which are not valid in JSON
+            content = value && JSON.parse(value.split('\xa0').join(''))
+        }
+        catch(exception) {
+            return
+        }
+
+		if(!content)
+			return
+        const current_string_content = JSON.stringify(content)
+        editor.innerHTML = this.format_input(content)
+        this.last_string_content = current_string_content
     }
 
     //===[ Getters / Setters ]=============================================
