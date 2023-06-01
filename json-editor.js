@@ -253,6 +253,8 @@ class JSON_Editor extends HTMLElement {
             content = value && JSON.parse(value.split('\xa0').join(''))
         }
         catch(exception) {
+			editor.innerHTML = value
+			this.last_string_content = value
             return
         }
 
