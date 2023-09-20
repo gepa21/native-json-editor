@@ -6,9 +6,8 @@ class JSON_Editor extends HTMLElement {
             <style>
                 :host(json-editor) {
                     display: inline-flex;
-                    width: 300px;
-                    height: 150px;
                     background: #252530;
+					width: 100%;
                     color: #fff;
                     font-family: monospace;
                     padding: 4px;
@@ -46,6 +45,9 @@ class JSON_Editor extends HTMLElement {
 
     connectedCallback() {
 		this.editor.contentEditable = String(!Boolean(this.getAttribute('readonly'))) || 'true'
+		this.editor.style = "resize: " + (String(this.getAttribute('resize')) || "none") + "; " +
+							"min-height:" + (String(this.getAttribute('minHeight')) || "unset") + "; ";
+		
         this.indent = Number(this.getAttribute('indent')) || 3
         this.init(this.getAttribute('value'))
     }
@@ -292,12 +294,16 @@ class JSON_Editor extends HTMLElement {
         this.string_value = JSON.stringify( input )
     }
 	
-    get readonly() {
-        return this._isEditable;
+	set readonly( input ) {
+		// marker
+    }
+	
+    set resize( input ) {
+		// marker
     }
 
-    set readonly( input ) {
-		this.editor.contentEditable = !Boolean(input);
+    set minHeight( input ) {
+		// marker
     }
 }
 
